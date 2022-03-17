@@ -2,10 +2,10 @@
 
 ## Team Members
 
-1. Arnav Akula
-2. Abhilash Dhumala 
+1. [Arnav Akula](https://github.com/arnavakula7474)
+2. [Abhilash Dhumala](https://github.com/abhilash15)
 3. Logan Krohn
-4. SriSathya Mamidala
-5. Naveen Tanuku
+4. [Sri Sathya Mamidala](https://github.com/srisathyamamidala)
+5. [Naveen Tanuku](https://github.com/NaveenTanuku)
 
 
