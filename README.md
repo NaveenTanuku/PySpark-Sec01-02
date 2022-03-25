@@ -1,5 +1,7 @@
 # PySpark-Sec01-02
 
+## Reminder! Pull down before you push your commits to the project!
+
 ## Team Members
 
 1. [Arnav Akula](https://github.com/arnavakula7474)
