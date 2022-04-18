@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package  edu.nwmissouri.bigdatapy.sathya;
+package edu.nwmissouri.bigdatapy.sathya;
 
 // beam-playground:
 //   name: MinimalWordCount
@@ -47,6 +47,7 @@ import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
 
 public class MinimalPageRankSat {
+   public static void main(String[] args) {
 
    PipelineOptions options = PipelineOptionsFactory.create();
 
