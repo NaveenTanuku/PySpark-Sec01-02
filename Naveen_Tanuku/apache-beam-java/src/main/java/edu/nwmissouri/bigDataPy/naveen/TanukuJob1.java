@@ -120,6 +120,8 @@ public class TanukuJob1 {
     PCollection<KV<String, String>> pcollectionkvpairs2 = naveenMapper(p,"java.md",dataFolder);
     PCollection<KV<String, String>> pcollectionkvpairs3 = naveenMapper(p,"python.md",dataFolder);
     PCollection<KV<String, String>> pcollectionkvpairs4 = naveenMapper(p,"README.md",dataFolder);
+    
+    PCollection<KV<String, String>> pcollectionkvpairs5 = naveenMapper(p,"compass.md",dataFolder);
 
 
     //     // We use a Filter transform to avoid empty word
@@ -155,7 +157,7 @@ public class TanukuJob1 {
 
         //pcolLinks.apply(TextIO.write().to("NaveenPR"));
 
-        PCollectionList<KV<String, String>> pcCollectionKVpairs = PCollectionList.of(pcollectionkvpairs1).and(pcollectionkvpairs2).and(pcollectionkvpairs3).and(pcollectionkvpairs4);
+        PCollectionList<KV<String, String>> pcCollectionKVpairs = PCollectionList.of(pcollectionkvpairs1).and(pcollectionkvpairs2).and(pcollectionkvpairs3).and(pcollectionkvpairs4).and(pcollectionkvpairs5);
 
         PCollection<KV<String, String>> myMergedList = pcCollectionKVpairs.apply(Flatten.<KV<String,String>>pCollections());
      
