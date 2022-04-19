@@ -116,12 +116,12 @@ public class PageRankArnavJob1 {
 
     // p.apply(TextIO.read().from(dataPath))
 
-    PCollection<KV<String, String>> pcollectionkvpairs1 = naveenMapper(p,"go.md",dataFolder);
-    PCollection<KV<String, String>> pcollectionkvpairs2 = naveenMapper(p,"java.md",dataFolder);
-    PCollection<KV<String, String>> pcollectionkvpairs3 = naveenMapper(p,"python.md",dataFolder);
-    PCollection<KV<String, String>> pcollectionkvpairs4 = naveenMapper(p,"README.md",dataFolder);
+    PCollection<KV<String, String>> pcollectionkvpairs1 = arnavMapper(p,"go.md",dataFolder);
+    PCollection<KV<String, String>> pcollectionkvpairs2 = arnavMapper(p,"java.md",dataFolder);
+    PCollection<KV<String, String>> pcollectionkvpairs3 = arnavMapper(p,"python.md",dataFolder);
+    PCollection<KV<String, String>> pcollectionkvpairs4 = arnavMapper(p,"README.md",dataFolder);
     
-    PCollection<KV<String, String>> pcollectionkvpairs5 = naveenMapper(p,"compass.md",dataFolder);
+    PCollection<KV<String, String>> pcollectionkvpairs5 = arnavMapper(p,"compass.md",dataFolder);
 
 
     //     // We use a Filter transform to avoid empty word
@@ -155,7 +155,7 @@ public class PageRankArnavJob1 {
         // into((TypeDescriptors.strings()))
         // .via((String linkLine) ->linkLine.substring(linkLine.indexOf("(")+1, linkLine.length()-1)));
 
-        //pcolLinks.apply(TextIO.write().to("NaveenPR"));
+        //pcolLinks.apply(TextIO.write().to("arnavPR"));
 
         PCollectionList<KV<String, String>> pcCollectionKVpairs = PCollectionList.of(pcollectionkvpairs1).and(pcollectionkvpairs2).and(pcollectionkvpairs3).and(pcollectionkvpairs4).and(pcollectionkvpairs5);
 
@@ -166,12 +166,12 @@ public class PageRankArnavJob1 {
             TypeDescriptors.strings())
               .via((myMergeLstout) -> myMergeLstout.toString()));
         
-        PCollectionLinksString.apply(TextIO.write().to("naveenKV"));
+        PCollectionLinksString.apply(TextIO.write().to("arnavKV"));
         p.run().waitUntilFinish();
      }
 
 
-     private static PCollection<KV<String, String>> naveenMapper(Pipeline p, String dataFile, String dataFolder) {
+     private static PCollection<KV<String, String>> arnavMapper(Pipeline p, String dataFile, String dataFolder) {
       String dataPath = dataFolder + "/" + dataFile;
    
       PCollection<String> pcolInputLines =  p.apply(TextIO.read().from(dataPath));
