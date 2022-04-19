@@ -69,7 +69,7 @@ import org.apache.beam.sdk.values.TypeDescriptors;
  * "wordcounts-00001-of-00005. When running on a distributed service, you would use an appropriate
  * file service.
  */
-public class PageRankabhilashJob1 {
+public class PageRankAbhilashJob1 {
 
   public static void main(String[] args) {
 
