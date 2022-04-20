@@ -18,15 +18,7 @@ import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
 import org.apache.beam.sdk.values.TypeDescriptors;
 
-public class krohnJob2 {
+public class RankedPage {
     String name = "unknown.md";
     Double rank = 1.000;
-    ArrayList<VotingPage> voters = new ArrayList<VotingPage>();
-    
-    PipelineOptions options = PipelineOptionsFactory.create();
-
-    Pipeline p = Pipeline.create(options);
-
-    //PCollection<KV<String,String>> KVjob2
-    
 }
