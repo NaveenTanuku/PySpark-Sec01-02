@@ -17,6 +17,7 @@
  */
 package edu.nwmissouri.bigDataPy.naveen;
 
+import java.util.ArrayList;
 // beam-playground:
 //   name: MinimalWordCount
 //   description: An example that counts words in Shakespeare's works.
@@ -27,17 +28,20 @@ package edu.nwmissouri.bigDataPy.naveen;
 //     - Filtering
 //     - IO
 //     - Core Transforms
-
 import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.Count;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Filter;
 import org.apache.beam.sdk.transforms.FlatMapElements;
 import org.apache.beam.sdk.transforms.Flatten;
 import org.apache.beam.sdk.transforms.MapElements;
+import org.apache.beam.sdk.transforms.DoFn.ProcessElement;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
@@ -70,6 +74,7 @@ import org.apache.beam.sdk.values.TypeDescriptors;
  * file service.
  */
 public class PageRankNaveenJob1 {
+
    // DEFINE DOFNS
   // ==================================================================
   // You can make your pipeline assembly code less verbose by defining
@@ -104,6 +109,7 @@ public class PageRankNaveenJob1 {
       receiver.output(KV.of(element.getKey(), new RankedPage(element.getKey(), voters)));
     }
   }
+  
 
   public static void main(String[] args) {
 
