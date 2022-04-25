@@ -28,21 +28,39 @@ package edu.nwmissouri.bigdatapy.sathya;
 //     - IO
 //     - Core Transforms
 
-import java.util.Arrays;
+import java.io.Serializable;
+import java.util.ArrayList;
 
-//import org.apache.beam.model.pipeline.v1.RunnerApi.PCollection;
+// beam-playground:
+//   name: MinimalWordCount
+//   description: An example that counts words in Shakespeare's works.
+//   multifile: false
+//   pipeline_options:
+//   categories:
+//     - Combiners
+//     - Filtering
+//     - IO
+//     - Core Transforms
+
+import java.util.Arrays;
+import java.util.Collection;
+
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptions;
 import org.apache.beam.sdk.options.PipelineOptionsFactory;
 import org.apache.beam.sdk.transforms.Count;
+import org.apache.beam.sdk.transforms.DoFn;
 import org.apache.beam.sdk.transforms.Filter;
 import org.apache.beam.sdk.transforms.FlatMapElements;
 import org.apache.beam.sdk.transforms.Flatten;
+import org.apache.beam.sdk.transforms.GroupByKey;
 import org.apache.beam.sdk.transforms.MapElements;
+import org.apache.beam.sdk.transforms.ParDo;
 import org.apache.beam.sdk.values.KV;
 import org.apache.beam.sdk.values.PCollection;
 import org.apache.beam.sdk.values.PCollectionList;
+import org.apache.beam.sdk.values.PCollectionTuple;
 import org.apache.beam.sdk.values.TypeDescriptor;
 import org.apache.beam.sdk.values.TypeDescriptors;
 
@@ -65,6 +83,60 @@ public class MinimalPageRankSat {
       receiver.output(KV.of(element.getKey(), new RankedPage(element.getKey(), voters)));
     }
   }
+
+  static class Job2Mapper extends DoFn<KV<String, RankedPage>, KV<String, RankedPage>> {
+    @ProcessElement
+    public void processElement(@Element KV<String, RankedPage> element,
+        OutputReceiver<KV<String, RankedPage>> receiver) {
+      
+      // set Integer votes to 0
+      Integer votes = 0;
+      // Create ArrayList<VotingPage>
+      ArrayList<VotingPage> voters = element.getValue().getVoters();
+
+      if(voters instanceof Collection){
+        votes = ((Collection<VotingPage>)voters).size();
+      }
+
+      for(VotingPage vp:voters){
+        String pageName = vp.getName();
+        Double pageRank = vp.getRank();
+        String contributingPageName = element.getKey();
+        Double contributingPageRank = element.getValue().getRank();
+        VotingPage contributor = new VotingPage(contributingPageName,contributingPageRank,votes);
+        ArrayList<VotingPage> arr = new ArrayList<VotingPage>();
+        arr.add(contributor);
+        receiver.output(KV.of(vp.getName(),new RankedPage(pageName, pageRank,arr)));
+      }
+     
+    }
+  }
+
+
+  static class Job2Updater extends DoFn<KV<String, Iterable<RankedPage>>, KV<String, RankedPage>> {
+    @ProcessElement
+    public void processElement(@Element KV<String, Iterable<RankedPage>> element,
+        OutputReceiver<KV<String, RankedPage>> receiver) {
+      
+          String thisPage = element.getKey();
+          Iterable<RankedPage> rankedPages = element.getValue();
+          Double dampfactor = 0.85;
+          Double updateRank = (1.0 -dampfactor);
+          ArrayList<VotingPage> newVoters = new ArrayList<VotingPage>();
+
+        for (RankedPage pg:rankedPages) {
+        if (pg!=null) {
+          for(VotingPage vp :pg.getVoters()){
+            newVoters.add(vp);
+            updateRank +=(dampfactor)*vp.getRank()/(double) vp.getVotes();
+          }
+        }
+      }
+      receiver.output(KV.of(thisPage, new RankedPage(thisPage,updateRank,newVoters)));
+    }
+  }
+
+
    public static void main(String[] args) {
 
    PipelineOptions options = PipelineOptionsFactory.create();
@@ -93,16 +165,44 @@ public class MinimalPageRankSat {
 
     PCollection<KV<String, String>> myMergedList = pcCollectionKVpairs.apply(Flatten.<KV<String,String>>pCollections());
 
-    PCollection<String> PCollectionLinksString =  myMergedList.apply(
-      MapElements.into(  
-        TypeDescriptors.strings())
-          .via((myMergeLstout) -> myMergeLstout.toString()));
+   
+
+    PCollection<KV<String, Iterable<String>>> listReducedPairs =myMergedList.apply(GroupByKey.create());
+    PCollection<KV<String, RankedPage>> job02 = listReducedPairs.apply(ParDo.of(new Job1Finalizer()));
+
+    PCollection<KV<String,RankedPage>> job2Mapper = job02.apply(ParDo.of(new Job2Mapper()));
+
+    // PCollection<KV<String, RankedPage>> job2out = null; 
+    PCollection<KV<String,RankedPage>> job2Out = null;
+    PCollection<KV<String,Iterable<RankedPage>>> job2MapperGrpByKey = job2Mapper.apply(GroupByKey.create());
+    
+    job2Out = job2MapperGrpByKey.apply(ParDo.of(new Job2Updater()));
+
+    job2MapperGrpByKey = job2Out.apply(GroupByKey.create());
+    
+    job2Out = job2MapperGrpByKey.apply(ParDo.of(new Job2Updater()));
+
+    job2Out = job2MapperGrpByKey.apply(ParDo.of(new Job2Updater()));
+    job2MapperGrpByKey = job2Out.apply(GroupByKey.create());    
+    job2Out = job2MapperGrpByKey.apply(ParDo.of(new Job2Updater()));   
+
+
+
+       
+
+      PCollection<String> linkString = job02.apply(
+        MapElements.into(
+          TypeDescriptors.strings()).via(
+              kvtoString -> kvtoString.toString()));
+
+
+
 
        
         //
         // By default, it will write to a set of files with names like wordcounts-00001-of-00005
-        // output RohitKVOutput
-        PCollectionLinksString.apply(TextIO.write().to("RankedPage-Sathya"));
+        
+        linkString.apply(TextIO.write().to("RankedPage-Sathya"));
        
 
         p.run().waitUntilFinish();
