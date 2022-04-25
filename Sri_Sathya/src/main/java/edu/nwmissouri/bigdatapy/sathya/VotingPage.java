@@ -4,46 +4,38 @@ import java.io.Serializable;
 
 public class VotingPage implements Serializable {
 
-    public String name;
-    public Double rank = 1.0;
-    public Integer votes;
+    String voter;
+    int votes;
+    double pageRank;
+    public VotingPage(String voter,Integer votes, double pageRank){
+        this.voter = voter;
+        this.votes = votes;      
+        this.pageRank = pageRank;  
+    }
+
+    public VotingPage(String voter,Integer votes){
+        this.voter = voter;
+        this.votes = votes;      
+        this.pageRank = 1.0;  
+    }
     
-
-
-
-    public VotingPage(String nameIn, Integer votesIn){
-        this.name = nameIn;
-
-        this.votes = votesIn;                
-
+    public String getVoter() {
+        return voter;
     }
-
-
-    public VotingPage(String nameIn, Double rankIn, Integer votesIn){
-        this.name = nameIn;
-
-        this.votes = votesIn;
-        
-        this.rank = rankIn ;
-
+    
+    public int getVotes() {
+        return votes;
     }
-
-    public Double getRank(){
-        return this.rank;
-    }
-
-    public String getName(){
-        return this.name;
-    }
-
-    public Integer getVotes(){
-        return this.votes;
-    }
-
-
+   
     @Override
-    public String toString(){
-        return "voterName = "+ name +", Page rank = "+this.rank +" ContributorVotes = " + votes;
+    public String toString() {
+        return "voterName : "+ voter +", Page rank : "+this.pageRank +" ContributorVotes : " + votes;
     }
+
+    public double getPageRank() {
+        return this.pageRank;
+    }
+  
+
 
 }
