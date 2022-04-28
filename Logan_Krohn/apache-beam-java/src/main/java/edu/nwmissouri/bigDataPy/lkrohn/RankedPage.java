@@ -42,6 +42,6 @@ public class RankedPage implements Serializable{
 
     @Override
     public String toString() {
-        return String.format("%s, %.5f, %d", this.name, this.rank, this.voters.toString());
+        return String.format("%s, %.5f, %s", this.name, this.rank, this.voters.toString());
     }
 }
