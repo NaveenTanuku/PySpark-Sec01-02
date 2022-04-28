@@ -30,6 +30,7 @@ package edu.nwmissouri.bigDataPy.lkrohn;
 
 import java.util.ArrayList;
 import java.util.Collection;
+
 import org.apache.beam.sdk.Pipeline;
 import org.apache.beam.sdk.io.TextIO;
 import org.apache.beam.sdk.options.PipelineOptions;
@@ -83,9 +84,9 @@ public class krohnPageRank {
     }
   }
 
-  static class Job2Mapper extends Dofn<KV<String, RankedPage>, KV<String, RankedPage>>{
+  static class Job2Mapper extends DoFn<KV<String, RankedPage>, KV<String, RankedPage>> {
     @ProcessElement
-    public void processElement(@Element KV<String, Iterable<String>> element,
+    public void processElement(@Element KV<String, RankedPage> element,
         OutputReceiver<KV<String, RankedPage>> receiver) {
       Integer votes = 0;
       ArrayList<VotingPage> voters = element.getValue().getVoters();
@@ -96,20 +97,20 @@ public class krohnPageRank {
   
       for (VotingPage vp : voters) {
         String pageName = vp.getName();
-        Souble pageRank = vp.getRank();
+        Double pageRank = vp.getRank();
         String contributingPageName = element.getKey();
         Double contributingPageRank = element.getValue().getRank();
         VotingPage contributor = new VotingPage(contributingPageName, contributingPageRank, votes);
         ArrayList<VotingPage> arr = new ArrayList<VotingPage>();
         arr.add(contributor);
+        receiver.output(KV.of(vp.getName(), new RankedPage(pageName, pageRank, arr)));
       }
-    receiver.output(KV.of(vp.getName(), new RankedPage(pageName, pageRank, arr)));
     }
   }
 
-  static class Job2Updater extends Dofn<KV<String, Iterable<RankedPage>>, KV<String, RankedPage>>{
+  static class Job2Updater extends DoFn<KV<String, Iterable<RankedPage>>, KV<String, RankedPage>>{
     @ProcessElement
-    public void processElement(@Element KV<String, Iterable<String>> element,
+    public void processElement(@Element KV<String, Iterable<RankedPage>> element,
         OutputReceiver<KV<String, RankedPage>> receiver) {
           String thisPage = element.getKey();
           Iterable<RankedPage> rankedPages = element.getValue();
@@ -151,22 +152,21 @@ public class krohnPageRank {
     PCollection<KV<String, Iterable <String>>> reducedPairs = mergedList.apply(GroupByKey.<String,String>create());
     // Convert to a custom Value object (RankedPage) in preparation for Job 2
     PCollection<KV<String, RankedPage>> job2in = reducedPairs.apply(ParDo.of(new Job1Finalizer()));
-      // END JOB 1
-    // ========================================
-    // KV{python.md, python.md, 1.00000, 0, [README.md, 1.00000,1]}
-    // KV{go.md, go.md, 1.00000, 0, [README.md, 1.00000,1]}
-    // KV{README.md, README.md, 1.00000, 0, [go.md, 1.00000,3, java.md, 1.00000,3,
-    // python.md, 1.00000,3]}
-    // ========================================
-    // BEGIN ITERATIVE JOB 2
+    //   // END JOB 1
+    // // ========================================
+    // // KV{python.md, python.md, 1.00000, 0, [README.md, 1.00000,1]}
+    // // KV{go.md, go.md, 1.00000, 0, [README.md, 1.00000,1]}
+    // // KV{README.md, README.md, 1.00000, 0, [go.md, 1.00000,3, java.md, 1.00000,3,
+    // // python.md, 1.00000,3]}
+    // // ========================================
+    // // BEGIN ITERATIVE JOB 2
 
     PCollection<KV<String, RankedPage>> job2out = null; 
     int iterations = 50;
     for (int i = 1; i <= iterations; i++) {
       // use job2in to calculate job2 out
-      //PCollection<KV<String, RankedPage>> job2in = pColGroupByKey.apply(ParDo.of(new Job1Finalizer()));
       PCollection<KV<String,RankedPage>> krohnJob2Mapper = job2in.apply(ParDo.of(new Job2Mapper()));
-      PCollection<KV<String,Iterable<RankedPage>>> krohnJob2GBK = job2Mapper.apply(GroupByKey.create());
+      PCollection<KV<String,Iterable<RankedPage>>> krohnJob2GBK = krohnJob2Mapper.apply(GroupByKey.create());
       
       job2out = krohnJob2GBK.apply(ParDo.of(new Job2Updater()));
       job2in = job2out;
@@ -177,20 +177,19 @@ public class krohnPageRank {
     // after 40 - output might look like this:
     // KV{java.md, java.md, 0.69415, 0, [README.md, 1.92054,3]}
     // KV{python.md, python.md, 0.69415, 0, [README.md, 1.92054,3]}
-    // KV{README.md, README.md, 1.91754, 0, [go.md, 0.69315,1, java.md, 0.69315,1,
-    // python.md, 0.69315,1]}
+    // KV{README.md, README.md, 1.91754, 0, [go.md, 0.69315,1, java.md, 0.69315,1, python.md, 0.69315,1]}
 
-    // Map KVs to strings before outputting
+    //Map KVs to strings before outputting
     PCollection<String> output = job2out.apply(MapElements.into(
         TypeDescriptors.strings())
         .via(kv -> kv.toString()));
 
     // Write from Beam back out into the real world
     
-    PCollection<String> kvOut = reducedPairs.apply(MapElements.into(TypeDescriptors.strings())
-        .via((kvpairs) -> kvpairs.toString()));
+    // PCollection<String> kvOut = reducedPairs.apply(MapElements.into(TypeDescriptors.strings())
+    //     .via((kvpairs) -> kvpairs.toString()));
 
-        kvOut.apply(TextIO.write().to("krohnPR"));
+        output.apply(TextIO.write().to("krohnPR"));
 
     p.run().waitUntilFinish();
   }
@@ -238,8 +237,8 @@ public class krohnPageRank {
     
 
     PCollection<String> pcolLinks = pcolLinkLines.apply(
-          FlatMapElements.into(TypeDescriptors.strings())
-              .via((String linkline) -> Arrays.asList(linkline.substring(linkline.indexOf("(")+1,linkline.length()-1))));
+          MapElements.into(TypeDescriptors.strings())
+              .via((String linkline) -> linkline.substring(linkline.indexOf("(")+1,linkline.length()-1)));
 
 
     PCollection<KV<String, String >> KVpairsJob1 = pcolLinks.apply(
