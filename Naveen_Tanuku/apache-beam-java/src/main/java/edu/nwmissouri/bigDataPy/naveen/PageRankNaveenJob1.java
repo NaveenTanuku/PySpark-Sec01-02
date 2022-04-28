@@ -74,6 +74,49 @@ public class PageRankNaveenJob1 {
   }
   
 
+  static class Job2Mapper extends DoFn<KV<String, RankedPage>, KV<String, RankedPage>> {
+    @ProcessElement
+    public void processElement(@Element KV<String, RankedPage> element,
+      OutputReceiver<KV<String, RankedPage>> receiver) {
+      int votes = 0;
+      ArrayList<VotingPage> voters = element.getValue().getVoterList();
+      if(voters instanceof Collection){
+        votes = ((Collection<VotingPage>) voters).size();
+      }
+      for(VotingPage vp: voters){
+        String pageName = vp.getVoterName();
+        double pageRank = vp.getPageRank();
+        String contributingPageName = element.getKey();
+        double contributingPageRank = element.getValue().getRank();
+        VotingPage contributor = new VotingPage(contributingPageName,votes,contributingPageRank);
+        ArrayList<VotingPage> arr = new ArrayList<>();
+        arr.add(contributor);
+        receiver.output(KV.of(vp.getVoterName(), new RankedPage(pageName, pageRank, arr)));        
+      }
+    }
+
+    static class Job2Updater extends DoFn<KV<String, Iterable<RankedPage>>, KV<String, RankedPage>> {
+      @ProcessElement
+      public void processElement(@Element KV<String, Iterable<RankedPage>> element,
+        OutputReceiver<KV<String, RankedPage>> receiver) {
+          Double dampingFactor = 0.85;
+          Double updatedRank = (1 - dampingFactor);
+          ArrayList<VotingPage> newVoters = new ArrayList<>();
+          for(RankedPage rankPage:element.getValue()){
+            if (rankPage != null) {
+              for(VotingPage votingPage:rankPage.getVoterList()){
+                newVoters.add(votingPage);
+                updatedRank += (dampingFactor) * votingPage.getPageRank() / (double)votingPage.getContributorVotes();
+                // newVoters.add(new VotingPageReddy(votingPage.getVoterName(),votingPage.getContributorVotes(),updatedRank));
+              }
+            }
+          }
+          receiver.output(KV.of(element.getKey(),new RankedPage(element.getKey(), updatedRank, newVoters)));
+  
+      }
+  
+    }
+
   public static void main(String[] args) {
 
     PipelineOptions options = PipelineOptionsFactory.create();
